@@ -1,33 +1,25 @@
-"""Navigation fixtures for use in tests."""
-# -*- coding: utf8 -*-
-import pytest
+"""A library for UI Automation to navigate a hierarchical interface.
+
+Each part of the interface that is activated by a certain action, can be a
+node in a tree.  For example, a website can be a tree of pages, where the root
+is the home page, and each node is the name of the page and a function that gets
+the browser from the parent to the current page.
+
+A navigation node is a tuple (or dict entry), first item a string name of the node,
+2nd item either a function to navigate with, or a list of a function and a dict
+containing other nodes.
+
+TODO:  support arguments for navigation steps (currently only no-arg functions)
+
+.. moduleauthor:: Jeff Weiss <jweiss@redhat.com>
+"""
 from itertools import dropwhile
 from copy import deepcopy
-from fixtures.pytest_selenium import move_to_element, click
 
+# Don't clobber the tree when reloading this module
 if not 'nav_tree' in globals():
     nav_tree = ['toplevel', lambda: None]  # navigation tree with just a root node
 
-_width_errmsg = '''The minimum supported width of CFME is 1280 pixels
-
-Some navigation fixtures will fail if the browser window is too small
-due to submenu elements being rendered off the screen.
-'''
-
-
-@pytest.fixture
-def home_page_logged_in(selenium):
-    """Log in to the appliance and return the home page."""
-    # window_size = selenium.get_window_size()
-    # Assert.greater_equal(window_size['width'], 1280, _width_errmsg)
-    from pages.login import login_admin
-    login_admin()
-    # Assert.true(home_pg.is_logged_in, 'Could not determine if logged in')
-
-
-# a navigation node is a tuple/list, first item a string name of the node,
-# 2nd item either a function to navigate with, or a tuple/list of a function
-# and a dict containing other nodes.
 
 def _has_children(node):
     return (isinstance(node[1], (list, tuple)) and len(node[1]) > 1)
@@ -77,6 +69,15 @@ def tree_find(tree, path=None):
 
 
 def tree_graft(target, branches, tree=None):
+    """Add a branch of navigation nodes to the navigation tree.
+
+    target: str name of node to add branches to
+    branches: dict of nodes that can be directly navigated to from the target.
+    tree: An existing tree to graft onto. By default, graft onto the module's
+    top-level tree.
+    
+    returns a new tree with branches added (does not modify existing tree)
+    """
     if not tree:
         tree = nav_tree
     path = tree_path(target, tree)
@@ -90,7 +91,6 @@ def tree_graft(target, branches, tree=None):
         node = [idx, _children(node).get(idx)]
         if node is None:
             raise LookupError("Unable to find node %s in nav tree." % idx)
-    # print parent_node
     if not parent_node:
         if _has_children(node):
             _children(node).update(branches)
@@ -100,12 +100,18 @@ def tree_graft(target, branches, tree=None):
         _children(_get_child(parent_node, _name(node))).update(branches)
     else:
         parent_node[1][1][_name(node)] = [node[1], branches]
-    # print node
-    # print new_tree
     return new_tree
 
 
 def navigate(tree, end, start=None):
+    """Navigates the tree from the start node to the end node.
+
+    tree: A navigation tree
+    end: str name of the destination node
+    start: str name of the starting node (if the UI's
+    current state is already known, otherwise start from
+    the root node)
+    """
     steps = tree_find(tree, tree_path(end, tree))
     if steps is None:
         raise ValueError("Destination not found in navigation tree: %s" % end)
@@ -123,18 +129,9 @@ def add_branch(target, branches):
 
 
 def go_to(dest, start=None):
+    """Navigates the module's nav_tree from start to dest.  See navigate
+    function.
+
+    """
+
     navigate(nav_tree, dest, start)
-
-
-def move_to_fn(*els):
-    def f():
-        for el in els:
-            move_to_element(el)
-    return f
-
-
-def click_fn(*els):
-    def f():
-        for el in els:
-            click(el)
-    return f
