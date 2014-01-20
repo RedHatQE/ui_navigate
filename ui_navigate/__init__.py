@@ -15,6 +15,7 @@ TODO:  support arguments for navigation steps (currently only no-arg functions)
 """
 from itertools import dropwhile
 from copy import deepcopy
+import inspect
 
 # Don't clobber the tree when reloading this module
 if not 'nav_tree' in globals():
@@ -75,7 +76,7 @@ def tree_graft(target, branches, tree=None):
     branches: dict of nodes that can be directly navigated to from the target.
     tree: An existing tree to graft onto. By default, graft onto the module's
     top-level tree.
-    
+
     returns a new tree with branches added (does not modify existing tree)
     """
     if not tree:
@@ -103,7 +104,7 @@ def tree_graft(target, branches, tree=None):
     return new_tree
 
 
-def navigate(tree, end, start=None):
+def navigate(tree, end, start=None, context=None):
     """Navigates the tree from the start node to the end node.
 
     tree: A navigation tree
@@ -111,7 +112,12 @@ def navigate(tree, end, start=None):
     start: str name of the starting node (if the UI's
     current state is already known, otherwise start from
     the root node)
+    context: a dict of context data.  Usually this is dynamic application data
+    for example, something you just created in the UI, and now you want to
+    navigate to edit it.
+
     """
+    print(context)
     steps = tree_find(tree, tree_path(end, tree))
     if steps is None:
         raise ValueError("Destination not found in navigation tree: %s" % end)
@@ -120,7 +126,11 @@ def navigate(tree, end, start=None):
         if len(steps) == 0:
             raise ValueError("Starting location %s not found in navigation tree." % start)
     for step in steps:
-        step()
+        needs_context = len(inspect.getargspec(step)[0]) > 0
+        if needs_context:
+            step(context)
+        else:
+            step()
 
 
 def add_branch(target, branches):
@@ -128,10 +138,10 @@ def add_branch(target, branches):
     nav_tree = tree_graft(target, branches)
 
 
-def go_to(dest, start=None):
+def go_to(dest, start=None, context=None):
     """Navigates the module's nav_tree from start to dest.  See navigate
     function.
 
     """
 
-    navigate(nav_tree, dest, start)
+    navigate(nav_tree, dest, start=start, context=context)
