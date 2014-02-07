@@ -117,10 +117,10 @@ def navigate(tree, end, start=None, context=None):
     navigate to edit it.
 
     """
-    print(context)
-    steps = tree_find(tree, tree_path(end, tree))
-    if steps is None:
+    path = tree_path(end, tree)
+    if path is None:
         raise ValueError("Destination not found in navigation tree: %s" % end)
+    steps = tree_find(tree, path)
     if start:
         steps = dropwhile(lambda s: _name(s) != start, steps)
         if len(steps) == 0:
