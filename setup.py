@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 setup(
     name="ui_navigate",
-    version="0.2.1",
+    version="1.0.0",
     packages=find_packages(),
     #scripts=['say_hello.py'],
 

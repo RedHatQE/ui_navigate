@@ -9,17 +9,14 @@ A navigation node is a tuple (or dict entry), first item a string name of the no
 2nd item either a function to navigate with, or a list of a function and a dict
 containing other nodes.
 
-TODO:  support arguments for navigation steps (currently only no-arg functions)
-
 .. moduleauthor:: Jeff Weiss <jweiss@redhat.com>
 """
 from itertools import dropwhile
 from copy import deepcopy
-import inspect
 
 # Don't clobber the tree when reloading this module
 if not 'nav_tree' in globals():
-    nav_tree = ['toplevel', lambda: None]  # navigation tree with just a root node
+    nav_tree = ['toplevel', lambda _: None]  # navigation tree with just a root node
 
 
 def _has_children(node):
@@ -126,11 +123,7 @@ def navigate(tree, end, start=None, context=None):
         if len(steps) == 0:
             raise ValueError("Starting location %s not found in navigation tree." % start)
     for step in steps:
-        needs_context = len(inspect.getargspec(step)[0]) > 0
-        if needs_context:
-            step(context)
-        else:
-            step()
+        step(context)
 
 
 def add_branch(target, branches):
