@@ -138,3 +138,11 @@ def go_to(dest, start=None, context=None):
     """
 
     navigate(nav_tree, dest, start=start, context=context)
+
+
+def fn(f):
+    """Takes a function of no args and makes it take 1 arg,
+    making it suitable for use as a navigation step."""
+    def g(_):
+        return f()
+    return g
