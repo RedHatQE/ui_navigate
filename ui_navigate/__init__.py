@@ -13,6 +13,7 @@ containing other nodes.
 """
 from itertools import dropwhile
 from copy import deepcopy
+import functools
 
 # Don't clobber the tree when reloading this module
 if not 'nav_tree' in globals():
@@ -119,7 +120,7 @@ def navigate(tree, end, start=None, context=None):
         raise ValueError("Destination not found in navigation tree: %s" % end)
     steps = tree_find(tree, path)
     if start:
-        steps = dropwhile(lambda s: _name(s) != start, steps)
+        steps = list(dropwhile(lambda s: _name(s) != start, steps))
         if len(steps) == 0:
             raise ValueError("Starting location %s not found in navigation tree." % start)
     for step in steps:
@@ -146,3 +147,7 @@ def fn(f):
     def g(_):
         return f()
     return g
+
+
+def partial(f, *args):
+    return fn(functools.partial(f, *args))
